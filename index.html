@@ -1,49 +1,91 @@
 <!doctype html>
-<html lang="he" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>i_seeeeeeee — תערוכות קרובות</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>i_seeeeeeee • Exhibitions Near You</title>
 
-  <!-- Leaflet (מפה) -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Font + Leaflet -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
 
-  <!-- עיצוב בסיסי לבן/שחור כדי לראות תוצאות -->
-  <style>
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Heebo,Arial,sans-serif;background:#fff;color:#000}
-    header{padding:14px 16px;border-bottom:2px solid #000;text-align:center;font-weight:800;letter-spacing:.03em}
-    main{max-width:1000px;margin:16px auto;padding:0 16px}
-    .card{border:2px solid #000;border-radius:12px;padding:16px;margin-bottom:16px}
-    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center}
-    input,button{border:2px solid #000;border-radius:12px;padding:10px 14px;background:#fff;color:#000}
-    button{cursor:pointer;font-weight:700}
-    #map{height:380px;border:2px solid #000;border-radius:12px}
-  </style>
+  <link rel="stylesheet" href="style.css?v=1000"/>
 </head>
 <body>
-  <header>i_seeeeeeee</header>
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="brand"><div class="logo">i_seeeeeeee</div></div>
+  </header>
 
   <main>
-    <section class="card">
-      <div class="row" style="margin-bottom:8px;font-weight:800;font-size:28px">What do you (wanna) see?</div>
-      <div class="row" style="margin-bottom:8px">
-        <input id="addr" placeholder="כתובת (למשל: דיזנגוף 100, תל אביב)" style="flex:1;min-width:260px">
+    <!-- Search card -->
+    <section class="card" aria-label="Search controls">
+      <h1 class="hero-title">What do you (wanna) see?</h1>
+
+      <div class="row" style="margin-top:10px;">
+        <input id="addressInput" type="text" placeholder="Address (e.g., Dizengoff 100, Tel Aviv)"/>
       </div>
-      <div class="row" style="margin-bottom:8px">
-        <button id="btnMyLoc">My location</button>
-        <span style="font-weight:900">OR</span>
-        <button id="btnSearchAddr">Search address</button>
+
+      <div class="row" style="justify-content:center; gap:14px; margin-top:12px;">
+        <button id="myLocBtn" class="btn">My location</button>
+        <div class="or-chip">OR</div>
+        <button id="searchAddrBtn" class="btn">Search address</button>
       </div>
-      <div id="status" class="row" style="margin-top:6px;color:#444;font-size:14px">No location selected yet</div>
+
+      <div class="row" style="margin-top:12px;">
+        <input id="artistInput" type="text" placeholder="Search by artist name"/>
+      </div>
+
+      <div class="row wrap" style="margin-top:12px;">
+        <input id="startDate" type="date" />
+        <input id="endDate" type="date" />
+      </div>
+
+      <div class="row" style="justify-content:center; margin-top:14px;">
+        <button id="filterBtn" class="btn">Filter shows</button>
+      </div>
+
+      <div style="margin-top:18px;">
+        <input id="radiusKm" type="range" min="1" max="30" step="1" value="10"/>
+        <div class="row" style="justify-content:space-between;">
+          <div class="small muted"> </div>
+          <div class="small"><strong>Radius (km): <span id="radiusLabel">10</span></strong></div>
+        </div>
+        <div id="locStatus" class="muted small" style="margin-top:6px;">No location selected yet</div>
+      </div>
     </section>
 
-    <section class="card">
-      <div id="map"></div>
+    <!-- Map card -->
+    <section class="card" style="margin-top:20px;">
+      <div id="map" role="application" aria-label="Exhibitions map"></div>
+    </section>
+
+    <!-- Results list -->
+    <section class="card" style="margin-top:20px;">
+      <h2 style="margin-bottom:10px;">Exhibitions found</h2>
+      <div id="results" class="results"></div>
     </section>
   </main>
 
-  <!-- האפליקציה (עם מעקף קאש) -->
-  <script src="app.js?v=66"></script>
+  <!-- Modal for details -->
+  <div id="modal" class="modal" aria-hidden="true">
+    <div class="sheet">
+      <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h3 id="modalTitle" style="margin:0;"></h3>
+        <button id="modalClose" class="close btn">Close</button>
+      </div>
+      <div id="modalMeta" class="muted" style="margin-bottom:12px;"></div>
+      <div id="modalDesc" style="margin-bottom:12px;"></div>
+      <div id="modalGallery" class="gallery"></div>
+      <div class="actions" style="margin-top:12px;">
+        <button id="followBtn" class="btn">Follow artist</button>
+        <a id="navigateBtn" class="btn" target="_blank" rel="noopener">Navigate</a>
+        <a id="websiteBtn" class="btn" target="_blank" rel="noopener">Website</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=1000"></script>
 </body>
 </html>
