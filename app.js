@@ -1,71 +1,105 @@
-// --- Exhibitions App ---
-// תלוי ב- Leaflet.js + Firebase (במידה ואת משתמשת בהתראות)
+// app.js – גרסה בטוחה שלא שוברת אם יש כבר EXHIBITIONS
+console.log("app.js loaded v66");
 
-/////////////////////////////
-// Map init
-/////////////////////////////
-const map = L.map('map').setView([32.08, 34.78], 12);
+// אם כבר יש לך EXHIBITIONS מוגדרת איפשהו – נשתמש בה.
+// אחרת נשים כמה דוגמאות כדי שהמפה תעלה.
+const EXHIBITIONS = (window.EXHIBITIONS && Array.isArray(window.EXHIBITIONS) && window.EXHIBITIONS.length)
+  ? window.EXHIBITIONS
+  : [
+      {id:"demo-1", title:"New Forms", artist:"Maya Cohen", venue:"Tel Aviv Museum of Art",
+       address:"Shaul HaMelech 27", coords:[32.0776,34.7864], start:"2025-01-15", end:"2025-04-10",
+       images:["https://picsum.photos/seed/tlv001/800/500"]},
+      {id:"demo-2", title:"Light Mechanics", artist:"Omer Levi", venue:"Helena Rubinstein Pavilion",
+       address:"Tarsat 6", coords:[32.0737,34.7834], start:"2025-02-01", end:"2025-05-01",
+       images:["https://picsum.photos/seed/tlv002/800/500"]},
+      {id:"demo-3", title:"Coastal Lines", artist:"Yael Katz", venue:"Eretz Israel Museum (MUZA)",
+       address:"Haim Levanon 2", coords:[32.1008,34.8044], start:"2025-03-05", end:"2025-06-20",
+       images:["https://picsum.photos/seed/tlv003/800/500"]}
+    ];
 
+// -------- Map --------
+const map = L.map('map', { zoomControl: true }).setView([32.08, 34.78], 12);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap contributors'
+  attribution: '&copy; OpenStreetMap'
 }).addTo(map);
 
-/////////////////////////////
-// Exhibitions Data (42 items)
-/////////////////////////////
-const EXHIBITIONS = [
-  {id:"tlv-001", title:"New Forms", artist:"Maya Cohen", venue:"Tel Aviv Museum of Art", city:"Tel Aviv", address:"27 Sderot Sha'ul HaMelech", coords:[32.0776,34.7864], start:"2025-01-15", end:"2025-04-10", tags:["museum","painting"], images:["https://picsum.photos/seed/tlv001/800/500"]},
-  {id:"tlv-002", title:"Light Mechanics", artist:"Omer Levi", venue:"Helena Rubinstein Pavilion", city:"Tel Aviv", address:"6 Tarsat St", coords:[32.0737,34.7834], start:"2025-02-01", end:"2025-05-01", tags:["installation","light"], images:["https://picsum.photos/seed/tlv002/800/500"]},
-  {id:"tlv-003", title:"Coastal Lines", artist:"Yael Katz", venue:"Eretz Israel Museum (MUZA)", city:"Tel Aviv", address:"2 Haim Levanon St", coords:[32.1008,34.8044], start:"2025-03-05", end:"2025-06-20", tags:["photography"], images:["https://picsum.photos/seed/tlv003/800/500"]},
-  {id:"tlv-004", title:"City Fragments", artist:"Nadav Azulay", venue:"Design Museum Holon – Pop-Up TLV", city:"Tel Aviv", address:"Rothschild 112", coords:[32.0633,34.7745], start:"2025-02-10", end:"2025-04-30", tags:["design","urban"], images:["https://picsum.photos/seed/tlv004/800/500"]},
-  // ... כל 42 התערוכות ממשיכות כאן בדיוק כפי שנתתי לך בהודעה הקודמת ...
-  {id:"tlv-305", title:"Quiet Bodies", artist:"Ronit K.", venue:"Beit Bialik – Gallery", city:"Tel Aviv", address:"22 Bialik St", coords:[32.0733,34.7743], start:"2025-03-11", end:"2025-05-03", tags:["sculpture"], images:["https://picsum.photos/seed/tlv305/800/500"]}
-];
+// שכבת מרקרים
+const markers = L.layerGroup().addTo(map);
 
-/////////////////////////////
-// Functions
-/////////////////////////////
-
-// Add exhibitions to map
-function renderExhibitions() {
-  EXHIBITIONS.forEach(ex => {
-    const marker = L.marker(ex.coords).addTo(map);
-    let imgHtml = "";
-    if (ex.images && ex.images.length > 0) {
-      imgHtml = `<div style="max-width:220px">` +
-                ex.images.map(src => `<img src="${src}" style="width:100%;margin-bottom:4px;border:1px solid #ccc;border-radius:4px">`).join("") +
-                `</div>`;
-    }
-    marker.bindPopup(`
-      <b>${ex.title}</b><br>
-      ${ex.artist}<br>
-      <i>${ex.venue}</i><br>
-      ${ex.address}<br>
-      ${ex.start} → ${ex.end}<br>
-      ${imgHtml}
-      <button onclick="followArtist('${ex.artist}')">Follow ${ex.artist}</button>
+// ציור תערוכות על המפה
+function renderExhibitions(list) {
+  markers.clearLayers();
+  list.forEach(ex => {
+    const m = L.marker(ex.coords).addTo(markers);
+    const imgs = (ex.images || []).map(src => `<img src="${src}" style="width:100%;margin:6px 0;border:1px solid #000;border-radius:8px">`).join("");
+    m.bindPopup(`
+      <div style="min-width:220px">
+        <div style="font-weight:900">${ex.title}</div>
+        <div>${ex.artist}</div>
+        <div style="font-style:italic">${ex.venue}</div>
+        <div>${ex.address || ""}</div>
+        <div style="margin:6px 0">${ex.start || ""} → ${ex.end || ""}</div>
+        ${imgs}
+        <button onclick="followArtist('${ex.artist.replace(/'/g,"&#39;")}')"
+                style="border:2px solid #000;border-radius:8px;padding:6px 10px;background:#fff;font-weight:800;cursor:pointer">
+          Follow ${ex.artist}
+        </button>
+      </div>
     `);
   });
 }
+renderExhibitions(EXHIBITIONS);
 
-// Follow artist (demo with localStorage)
-function followArtist(artist) {
-  let followed = JSON.parse(localStorage.getItem("followedArtists") || "[]");
-  if (!followed.includes(artist)) {
-    followed.push(artist);
-    localStorage.setItem("followedArtists", JSON.stringify(followed));
-    alert(`You are now following ${artist}. You’ll get alerts for new shows!`);
+// כפתור "עקוב אחרי אמן" (שמירה ב-localStorage להדגמה)
+window.followArtist = function(artist) {
+  const key = "followedArtists";
+  const list = JSON.parse(localStorage.getItem(key) || "[]");
+  if (!list.includes(artist)) {
+    list.push(artist);
+    localStorage.setItem(key, JSON.stringify(list));
+    alert(`You are now following ${artist}`);
   } else {
     alert(`You already follow ${artist}`);
   }
-}
+};
 
-// Example filter by artist name
-function searchByArtist(name) {
-  return EXHIBITIONS.filter(ex => ex.artist.toLowerCase().includes(name.toLowerCase()));
-}
+// --- מיקום משתמש / חיפוש כתובת ---
+const statusEl = document.getElementById('status');
+document.getElementById('btnMyLoc').onclick = () => {
+  statusEl.textContent = "Getting your location…";
+  if (!navigator.geolocation) {
+    statusEl.textContent = "Geolocation not supported";
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(pos => {
+    const { latitude, longitude } = pos.coords;
+    const here = [latitude, longitude];
+    map.setView(here, 14);
+    L.circleMarker(here, { radius:8, color:"#000", weight:2, fill:true, fillOpacity:1 }).addTo(map).bindPopup("You are here").openPopup();
+    statusEl.textContent = `Location set`;
+  }, err => {
+    statusEl.textContent = "Location denied";
+    console.error(err);
+  });
+};
 
-/////////////////////////////
-// Init
-/////////////////////////////
-renderExhibitions();
+document.getElementById('btnSearchAddr').onclick = async () => {
+  const q = (document.getElementById('addr').value || "").trim();
+  if (!q) return;
+  statusEl.textContent = "Searching address…";
+  try {
+    // שימוש ב-Nominatim (OSM) – שירות חינמי
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`;
+    const res = await fetch(url, { headers: { 'Accept-Language':'he' }});
+    const data = await res.json();
+    if (!data.length) { statusEl.textContent = "Address not found"; return; }
+    const { lat, lon, display_name } = data[0];
+    const p = [parseFloat(lat), parseFloat(lon)];
+    map.setView(p, 14);
+    L.marker(p).addTo(map).bindPopup(display_name).openPopup();
+    statusEl.textContent = "Address located";
+  } catch(e) {
+    console.error(e);
+    statusEl.textContent = "Address search failed";
+  }
+};
