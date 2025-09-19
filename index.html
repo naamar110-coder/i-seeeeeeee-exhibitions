@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>i_seeeeeeee — exhibitions near you</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css?v=1" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span>i_seeeeeeee</span></div>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h1>What do you (wanna) see?</h1>
+
+      <div class="controls">
+        <input id="addressInput" type="text" placeholder="Address (e.g., Dizengoff 100, Tel Aviv)" />
+        <div class="row center">
+          <button id="btnMyLoc" class="primary">My location</button>
+          <span class="or">OR</span>
+          <button id="btnSearchAddress" class="primary">Search address</button>
+        </div>
+        <input id="artistInput" type="text" placeholder="Search by artist name" />
+
+        <div class="row dates">
+          <input id="dateFrom" type="date" />
+          <input id="dateTo" type="date" />
+        </div>
+
+        <div class="row slider">
+          <label for="radius" class="label">Radius (km): <span id="radiusVal">10</span></label>
+          <input id="radius" type="range" min="2" max="50" step="1" value="10" />
+          <div id="locStatus" class="muted">No location selected yet</div>
+        </div>
+
+        <div class="row center">
+          <button id="btnFilter" class="secondary">Filter shows</button>
+          <button id="btnReset" class="ghost">Reset</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="mapListWrap">
+      <div id="map"></div>
+      <div class="listWrap">
+        <h2>Exhibitions</h2>
+        <div id="list"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal -->
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modalContent">
+      <button class="close" id="modalClose" aria-label="Close">×</button>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="app.js?v=1"></script>
+</body>
+</html>
